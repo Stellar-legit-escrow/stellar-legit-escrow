@@ -17,12 +17,79 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Resolve api glob relative to the backend root (two levels up from this file)
 const backendRoot = path.resolve(__dirname, '..', '..');
 
+// Component schemas referenced by the relayer documentation. These are merged
+// into the base spec so that `$ref: '#/components/schemas/RelayerError'` (and
+// friends) resolve even when the relayer path file is the only place that
+// documents them.
+const relayerSchemas = {
+  RelayerError: {
+    type: 'object',
+    description: 'Error envelope returned by the relayer endpoints.',
+    properties: {
+      code: {
+        type: 'string',
+        description: 'Machine-readable error code.',
+        enum: [
+          'OPERATION_NOT_ALLOWED',
+          'POOL_EXHAUSTED',
+          'RELAY_RATE_EXCEEDED',
+          'INVALID_XDR',
+          'UNAUTHORIZED',
+        ],
+      },
+      message: { type: 'string', description: 'Human-readable error message.' },
+      retry_after: {
+        type: 'integer',
+        description:
+          'Seconds until the client may retry (only present for RELAY_RATE_EXCEEDED).',
+      },
+    },
+    required: ['code', 'message'],
+  },
+  RelayerSponsorRequest: {
+    type: 'object',
+    properties: {
+      unsignedTxXdr: {
+        type: 'string',
+        description: 'Base64-encoded unsigned transaction envelope XDR.',
+      },
+    },
+    required: ['unsignedTxXdr'],
+  },
+  RelayerSponsorResponse: {
+    type: 'object',
+    properties: {
+      signedTxXdr: {
+        type: 'string',
+        description:
+          'Base64-encoded fee-bump envelope XDR, signed by the sponsor. The client must still submit it via stellarService.submitTransaction.',
+      },
+      fee: { type: 'integer', description: 'Fee (in stroops) paid by the sponsor.' },
+      signerAddress: {
+        type: 'string',
+        description: 'Stellar address of the fee-sponsoring signer.',
+      },
+    },
+    required: ['signedTxXdr', 'fee', 'signerAddress'],
+  },
+};
+
 const resolvedOptions = {
   ...swaggerOptions,
   apis: [
     path.join(backendRoot, 'api', 'routes', '*.js'),
     path.join(backendRoot, 'api', 'docs', 'paths', '*.js'),
   ],
+  definition: {
+    ...swaggerOptions.definition,
+    components: {
+      ...(swaggerOptions.definition?.components ?? {}),
+      schemas: {
+        ...(swaggerOptions.definition?.components?.schemas ?? {}),
+        ...relayerSchemas,
+      },
+    },
+  },
 };
 
 const swaggerSpec = swaggerJsdoc(resolvedOptions);

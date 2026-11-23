@@ -1114,3 +1114,24 @@ model PaymentStream {
   @@index([recipientAddress, createdAt(sort: Desc)])
   @@map("payment_streams")
 }
+
+// ── Gas-Free Transaction Relayer ──────────────────────────────────────────────
+//
+// Audit trail for every transaction sponsored by the relayer. Each row records
+// which user submitted the inner transaction, which pool signer paid the fee,
+// and the resulting fee-bump envelope so relays can be reconciled on-chain.
+
+model RelayedTransaction {
+  id                  String   @id @default(cuid())
+  userAddress         String   @map("user_address")
+  sponsorAddress      String   @map("sponsor_address")
+  innerTransactionHash String  @map("inner_transaction_hash")
+  feeBumpXdr          String   @map("fee_bump_xdr") @db.Text
+  operationType       String   @map("operation_type")
+  status              String   @default("submitted")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@index([userAddress, createdAt(sort: Desc)])
+  @@index([sponsorAddress, createdAt(sort: Desc)])
+  @@map("relayed_transactions")
+}

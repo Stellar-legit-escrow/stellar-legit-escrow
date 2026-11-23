@@ -232,6 +232,7 @@ app.use('/api/v1/webhooks', webhooksV1Routes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/relayer', relayerRoutes);
+app.use('/api/v1/relayer', relayerRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/compliance', complianceRoutes);
 app.use('/api/incidents', incidentRoutes);

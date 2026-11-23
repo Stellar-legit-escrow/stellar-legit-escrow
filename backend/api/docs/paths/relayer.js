@@ -108,6 +108,130 @@
  *       500:
  *         $ref: '#/components/responses/InternalError'
  *
+ * /api/v1/relayer/sponsor:
+ *   post:
+ *     tags: [Relayer]
+ *     summary: Sponsor and sign a gasless transaction
+ *     description: |
+ *       Wraps an unsigned transaction XDR in a fee-bump envelope signed by a
+ *       fee-sponsoring account from the relayer signer pool. Only whitelisted
+ *       operations (e.g. `invoke_host_function`) are sponsored. The client must
+ *       still submit the returned signed XDR via `stellarService.submitTransaction`.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [unsignedXdr]
+ *             properties:
+ *               unsignedXdr:
+ *                 type: string
+ *                 description: Base64-encoded unsigned transaction envelope XDR
+ *                 example: "AAAAAgAAAAB..."
+ *               userAddress:
+ *                 type: string
+ *                 description: Optional Stellar account of the user (defaults to the authenticated user)
+ *                 example: "GABC...XYZ"
+ *           examples:
+ *             sponsor:
+ *               summary: Sponsor a Soroban contract call
+ *               value:
+ *                 unsignedXdr: "AAAAAgAAAAB..."
+ *     responses:
+ *       200:
+ *         description: Transaction sponsored and signed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 signedXdr:
+ *                   type: string
+ *                   description: Base64-encoded fee-bump envelope XDR
+ *                   example: "AAAAAgAAAAB..."
+ *                 fee:
+ *                   type: integer
+ *                   description: Fee paid by the sponsor in stroops
+ *                   example: 100
+ *                 signerAddress:
+ *                   type: string
+ *                   description: Stellar account that sponsored the fee
+ *                   example: "GABC...XYZ"
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       422:
+ *         description: Operation type not allowed for sponsorship
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: "OperationNotAllowed"
+ *                 error:
+ *                   type: string
+ *                   example: "Operation type 'payment' is not allowed for sponsorship"
+ *       429:
+ *         description: Per-user relay rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: "RELAY_RATE_EXCEEDED"
+ *                 retry_after:
+ *                   type: integer
+ *                   description: Seconds until the next relay is permitted
+ *                   example: 3600
+ *       503:
+ *         description: No signer with sufficient balance is available
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: "PoolExhausted"
+ *                 error:
+ *                   type: string
+ *                   example: "No signer with sufficient balance available"
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ *
+ * /api/v1/relayer/pool-status:
+ *   get:
+ *     tags: [Relayer]
+ *     summary: Get the relayer signer pool status
+ *     responses:
+ *       200:
+ *         description: Signer pool status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available:
+ *                   type: integer
+ *                   description: Number of signers with sufficient balance
+ *                   example: 3
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of signers in the pool
+ *                   example: 5
+ *                 lowestBalance:
+ *                   type: number
+ *                   description: Lowest XLM balance among available signers
+ *                   example: 12.5
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ *
  * /api/relayer/status:
  *   get:
  *     tags: [Relayer]

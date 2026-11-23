@@ -8,6 +8,10 @@ import express from 'express';
 import authMiddleware from '../middleware/auth.js';
 import { createRelayer } from '../../services/relayerService.js';
 import { errorsTotal } from '../../lib/metrics.js';
+import {
+  sponsorTransaction,
+  getPoolStatus as getRelayerPoolStatus,
+} from '../controllers/relayerController.js';
 
 const router = express.Router();
 
@@ -22,6 +26,18 @@ function getRelayer() {
     relayerSecret: process.env.RELAYER_SECRET_KEY,
   });
 }
+
+/**
+ * POST /api/v1/relayer/sponsor
+ * Sponsor and sign an unsigned transaction XDR (fee abstraction)
+ */
+router.post('/sponsor', authMiddleware, sponsorTransaction);
+
+/**
+ * GET /api/v1/relayer/pool-status
+ * Get the fee-sponsoring signer pool status
+ */
+router.get('/pool-status', authMiddleware, getRelayerPoolStatus);
 
 /**
  * POST /api/relayer/execute
